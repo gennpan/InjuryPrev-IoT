@@ -5,3 +5,4 @@ flask
 pandas
 torch
 scikit-learn
+werkzeug        #per gestire eliminazione

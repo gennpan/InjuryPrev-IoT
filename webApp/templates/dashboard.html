@@ -1,0 +1,90 @@
+<html lang="it">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InjuryPrev</title>
+    <link rel="icon" type="image/png" sizes="48x48" href="../static/favicon.png?v=2">
+    <link rel="stylesheet" href="../static/style.css" />
+</head>
+<body>
+<header>
+    <div class="hamburger" onclick="toggleSidebar()">☰</div>
+    <h2>InjuryPrev - Dashboard</h2>
+</header>
+
+
+<nav id="sidebar" class="hidden">
+    <ul>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/data-view">Data View</a></li>
+    </ul>
+</nav>
+
+
+<main id="main">
+
+    <div class="card">
+        <h3>Carica il nuovo Team</h3>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <input type="text" name="team_name" placeholder="es: team_C_2022" required>
+            <br><br>
+            <input type="file" name="csv_file" accept=".csv" required>
+            <br><br>
+            <button type="submit" class="btl">Carica CSV</button>
+        </form>
+
+        <p id="uploadStatus"></p>
+    </div>
+
+    <div class="card">
+        <h3>Prevenzione</h3>
+
+
+        <br><br>
+        <button type="submit" class="btl">Calcola Rischio</button>
+    </div>
+
+
+</main>
+
+
+<!--script per il form-->
+<script>
+    document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData
+        });
+        const data = await res.json();
+        document.getElementById("uploadStatus").innerText = data.message || data.error;
+    });
+</script>
+
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('main');
+    function toggleSidebar() {
+        sidebar.classList.toggle('hidden');
+        main.classList.toggle('full');
+    }
+</script>
+
+
+
+
+
+<!--FUNZIONE PER PULSANTE DA MODIFICARE-->
+<!--<script src="js/api.js"></script>-->
+<!--<script>-->
+<!--    async function testPrediction() {-->
+<!--        const seq = [78, 82, 90, 110, 150]; // esempio heart rate-->
+<!--        const prob = await getRiskPrediction(seq);-->
+<!--        alert("Probabilità di infortunio: " + (prob * 100).toFixed(2) + "%");-->
+<!--    }-->
+<!--</script>-->
+
+
+</body>
+</html>

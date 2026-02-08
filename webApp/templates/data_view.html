@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>IoT Dashboard</title>
+    <link rel="icon" type="image/png" sizes="48x48" href="../static/favicon.png?v=2">
+    <link rel="stylesheet" href="../static/style.css"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+</head>
+
+<body>
+
+<header>
+    <div class="hamburger" onclick="toggleSidebar()">☰</div>
+    <h2>InjuryPrev - Data View</h2>
+</header>
+
+<nav id="sidebar" class="hidden">
+    <ul>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/data-view">Data View</a></li>
+    </ul>
+</nav>
+
+<main id="main">
+
+    <!-- Toggle -->
+    <div class="card-header">
+        <button id="toggleFeatures" class="toggle-inline">▼ info</button>
+    </div>
+
+    <div id="featuresContainer" class="card hidden">
+        <h3>Feature fisiologiche utilizzate</h3>
+        <p>
+            Le seguenti variabili vengono utilizzate dal modello LSTM per analizzare
+            il comportamento fisiologico e mostrare il rischio infortunio.
+        </p>
+
+        <table class="features-table">
+            <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Descrizione</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Speed Mean</td>
+                <td>Velocità media</td>
+            </tr>
+            <tr>
+                <td>Speed Max</td>
+                <td>Velocità massima</td>
+            </tr>
+            <tr>
+                <td>Speed Std.</td>
+                <td>Deviazione standard della velocità</td>
+            </tr>
+            <tr>
+                <td>Acc. Norm. Mean</td>
+                <td>Accelerazione normalizzata media</td>
+            </tr>
+            <tr>
+                <td>Acc. Norm. Max</td>
+                <td>Accelerazione normalizzata massima</td>
+            </tr>
+            <tr>
+                <td>Acc. Norm. Std.</td>
+                <td>Deviazione standard dell’accelerazione normalizzata</td>
+            </tr>
+            <tr>
+                <td>Gyro. Norm. Mean</td>
+                <td>Valore medio del giroscopio normalizzato</td>
+            </tr>
+            <tr>
+                <td>Gyro. Norm. Max</td>
+                <td>Valore massimo del giroscopio normalizzato</td>
+            </tr>
+            <tr>
+                <td>N. Samples</td>
+                <td>Numero di campioni analizzati</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h3>Dati fisiologici (CSV)</h3>
+        <p>
+            Valori reali estratti dal file CSV utilizzato dal modello
+            per l’analisi del rischio infortunio.
+        </p>
+
+
+        <!-- Team dropdown -->
+        <div class="dropdown-group">
+            <div class="dropdown">
+                <button class="dropdown-btn" id="teamBtn">Seleziona Team</button>
+                <ul class="dropdown-menu" id="teamMenu"></ul>
+            </div>
+
+            <!-- CSV dropdown -->
+            <div class="dropdown">
+                <button class="dropdown-btn" id="csvBtn">Seleziona CSV</button>
+                <ul class="dropdown-menu" id="csvMenu"></ul>
+            </div>
+        </div>
+
+        <button id="deleteFileBtn" class="btl-del"><i class="material-icons">delete</i> File</button>
+        <button id="deleteTeamBtn" class="btl-del"><i class="material-icons">delete</i> Team</button>
+
+        <div style="overflow-x:auto;">
+            <table class="features-table">
+                <thead>
+                <tr>
+                    <th>Team & Player ID</th>
+                    <th>Date</th>
+                    <th>Speed Mean</th>
+                    <th>Speed Max</th>
+                    <th>Speed Std.</th>
+                    <th>Acc. Norm. Mean</th>
+                    <th>Acc. Norm. Max</th>
+                    <th>Acc. Norm. Std.</th>
+                    <th>Gyro. Norm. Mean</th>
+                    <th>Gyro. Norm. Max</th>
+                    <th>N. Samples</th>
+                </tr>
+                </thead>
+                <tbody id="data-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+</main>
+
+<!-- Sidebar -->
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const main = document.getElementById('main');
+
+    function toggleSidebar() {
+        sidebar.classList.toggle('hidden');
+        main.classList.toggle('full');
+    }
+</script>
+
+<script>
+    let currentTeam = null; // default team
+    const teamBtn = document.getElementById("teamBtn");
+    const teamMenu = document.getElementById("teamMenu");
+    const csvBtn = document.getElementById("csvBtn");
+    const csvMenu = document.getElementById("csvMenu");
+
+    async function populateTeamDropdown() {
+        const res = await fetch("/api/teams");
+        const teams = await res.json();
+
+        teamMenu.innerHTML = "";
+
+        teams.forEach(team => {
+            const li = document.createElement("li");
+            li.textContent = team;
+            li.dataset.value = team;
+
+            li.addEventListener("click", async () => {
+                currentTeam = team;
+                teamBtn.textContent = team;
+                teamBtn.parentElement.classList.remove("open");
+                await populateCsvDropdown();
+            });
+
+            teamMenu.appendChild(li);
+        });
+
+        if (teams.length > 0) {
+            currentTeam = teams[0];
+            teamBtn.textContent = teams[0];
+            await populateCsvDropdown();
+        }
+    }
+
+    // Gestione team dropdown
+    teamBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        teamBtn.parentElement.classList.toggle("open");
+    });
+
+    // Gestione CSV dropdown
+    csvBtn.addEventListener("click", e => {
+        e.stopPropagation();
+        csvBtn.parentElement.classList.toggle("open");
+    });
+
+    document.addEventListener("click", () => {
+        teamBtn.parentElement.classList.remove("open");
+        csvBtn.parentElement.classList.remove("open");
+    });
+
+
+    async function populateCsvDropdown() {
+        const response = await fetch(`/api/team/${currentTeam}/files`);
+        const files = await response.json();
+
+        csvMenu.innerHTML = "";
+
+        files.forEach(file => {
+            const li = document.createElement("li");
+            li.textContent = file;
+            li.dataset.value = file;
+            li.classList.add("dropdown-item");
+            li.addEventListener("click", () => {
+                csvBtn.textContent = file;
+                csvBtn.parentElement.classList.remove("open");
+                loadCsvData(file);
+            });
+            csvMenu.appendChild(li);
+        });
+
+        if (files.length > 0) {
+            csvBtn.textContent = files[0];
+            loadCsvData(files[0]);
+        }
+    }
+
+    // Caricamento iniziale CSV per il team di default
+    populateTeamDropdown();
+
+    // Funzione per caricare dati CSV nella tabella
+    async function loadCsvData(csvFile) {
+        const response = await fetch(`/api/team/${currentTeam}?file=${csvFile}`);
+        const data = await response.json();
+        const tableBody = document.getElementById("data-table-body");
+        tableBody.innerHTML = "";
+
+        data.forEach(row => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>${row.player_id}</td>
+            <td>${row.date}</td>
+            <td>${row.speed_mean}</td>
+            <td>${row.speed_max}</td>
+            <td>${row.speed_std}</td>
+            <td>${row.acc_norm_mean}</td>
+            <td>${row.acc_norm_max}</td>
+            <td>${row.acc_norm_std}</td>
+            <td>${row.gyro_norm_mean}</td>
+            <td>${row.gyro_norm_max}</td>
+            <td>${row.n_samples}</td>
+        `;
+            tableBody.appendChild(tr);
+        });
+    }
+</script>
+
+<!-- Toggle -->
+<script>
+    const toggleButton = document.getElementById("toggleFeatures");
+    const featuresContainer = document.getElementById("featuresContainer");
+
+    toggleButton.addEventListener("click", () => {
+        const isHidden = featuresContainer.classList.toggle("hidden");
+        toggleButton.textContent = isHidden ? "▼ info" : "▲ info";
+    });
+</script>
+
+<script>
+    const deleteFileBtn = document.getElementById("deleteFileBtn");
+    const deleteTeamBtn = document.getElementById("deleteTeamBtn");
+
+    // delete csv
+    deleteFileBtn.addEventListener("click", async () => {
+        const csvFile = csvBtn.textContent;
+
+        if (!currentTeam || !csvFile) {
+            alert("Seleziona team e file.");
+            return;
+        }
+
+        if (!confirm(`Eliminare il file ${csvFile}?`)) return;
+
+        const res = await fetch(`/api/team/${currentTeam}/file/${csvFile}`, {
+            method: "DELETE"
+        });
+
+        if (res.ok) {
+            alert("File eliminato.");
+            await populateCsvDropdown();
+            document.getElementById("data-table-body").innerHTML = "";
+        } else {
+            alert("Errore eliminazione file.");
+        }
+    });
+
+    // delete team
+    deleteTeamBtn.addEventListener("click", async () => {
+
+        if (!currentTeam) {
+            alert("Nessun team selezionato.");
+            return;
+        }
+
+        if (!confirm(`Eliminare il team ${currentTeam} (tutti i CSV)?`)) return;
+
+        const res = await fetch(`/api/team/${currentTeam}`, {
+            method: "DELETE"
+        });
+
+        if (res.ok) {
+            alert("Team eliminato.");
+            currentTeam = null;
+            csvBtn.textContent = "Seleziona CSV";
+            document.getElementById("data-table-body").innerHTML = "";
+            await populateTeamDropdown();
+        } else {
+            alert("Errore eliminazione team.");
+        }
+    });
+
+</script>
+
+
+</body>
+</html>
