@@ -1,17 +1,23 @@
-from flask import Flask, jsonify, render_template, request
-from werkzeug.utils import secure_filename
-
+from flask import Blueprint, request, jsonify, render_template
+from webApp.api.model_service import ModelService
+from webApp.api.preprocess import compute_input_vector
 import pandas as pd
 import os
 import shutil
-
-
-app = Flask(__name__)
+from werkzeug.utils import secure_filename
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "dataset")
+ROOT_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
+DATA_DIR = os.path.join(ROOT_DIR, "frontend", "data")
 
-# Feature di interesse che mostro nella dash
+api_bp = Blueprint("api", __name__)
+
+# carico il modello migliore che ho ottenuto dal training
+model_service = ModelService.load(
+    weights_path="webApp/outputs/best_model.pt",
+)
+
+
 FEATURES = [
     "player_id",
     "date",
@@ -20,6 +26,30 @@ FEATURES = [
     "gyro_norm_mean", "gyro_norm_max",
     "n_samples"
 ]
+
+@api_bp.route("/predict", methods=["POST"])
+def predict():
+    data = request.get_json(silent=True) or {}
+
+    # si aspetta in input un json del genere: {"last_7_days": [ {8 features}, ... ]} di lunghezza 7 quindi altri 6 {...}
+    last_7_days = data.get("last_7_days")
+    if not isinstance(last_7_days, list):
+        return jsonify({"error": "Missing or invalid 'last_7_days' (must be a list of 7 days)."}), 400
+
+    try:
+        engineered = compute_input_vector(last_7_days)  # ritorna le feature rolled quindi dizionario con 32 feature dentro
+        print(engineered)
+        prob = model_service.predict_proba(engineered) # engineered è qualcosa del tipo {speed:,speed_max:,speed_7d:}
+        print(f"Questa è la probabilità : {prob}")
+        label = model_service.predict_label(prob)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+    return jsonify({
+        "injury_probability": prob,
+        "predicted_label": label
+    })
+
 
 def load_team_data(team_id, csv_file, limit=10000):
     team_dir = os.path.join(DATA_DIR, str(team_id))
@@ -33,19 +63,19 @@ def load_team_data(team_id, csv_file, limit=10000):
     return df
 
 
-@app.route("/")
+@api_bp.route("/")
 def home_page():
     return render_template("dashboard.html")
 
-@app.route("/dashboard")
+@api_bp.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
 
-@app.route("/dataset-view")
+@api_bp.route("/data-view")
 def data_view():
     return render_template("data_view.html")
 
-@app.route("/api/team/<team_id>/files")
+@api_bp.route("/api/team/<team_id>/files")
 def api_team_files(team_id):
 
     team_dir = os.path.join(DATA_DIR, team_id)
@@ -60,7 +90,7 @@ def api_team_files(team_id):
 
     return jsonify(files)
 
-@app.route("/api/teams")
+@api_bp.route("/api/teams")
 def api_teams():
 
     if not os.path.exists(DATA_DIR):
@@ -73,7 +103,7 @@ def api_teams():
 
     return jsonify(sorted(teams))
 
-@app.route("/api/upload", methods=["POST"])
+@api_bp.route("/api/upload", methods=["POST"])
 def upload_csv():
 
     team_name = request.form.get("team_name")
@@ -98,7 +128,7 @@ def upload_csv():
         "message": f"Team '{team_name}' creato e file caricato correttamente."
     })
 
-@app.route("/api/team/<team_id>")
+@api_bp.route("/api/team/<team_id>")
 def api_team_features(team_id):
     csv_file = request.args.get("file")
     if not csv_file:
@@ -110,7 +140,7 @@ def api_team_features(team_id):
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 404
 
-@app.route("/api/team/<team_id>/file/<filename>", methods=["DELETE"])
+@api_bp.route("/api/team/<team_id>/file/<filename>", methods=["DELETE"])
 def delete_csv(team_id, filename):
 
     team_id = secure_filename(team_id)
@@ -126,7 +156,7 @@ def delete_csv(team_id, filename):
     return jsonify({"message": "File eliminato"}), 200
 
 
-@app.route("/api/team/<team_id>", methods=["DELETE"])
+@api_bp.route("/api/team/<team_id>", methods=["DELETE"])
 def delete_team(team_id):
 
     team_id = secure_filename(team_id)
@@ -138,8 +168,3 @@ def delete_team(team_id):
     shutil.rmtree(team_path)
 
     return jsonify({"message": "Team eliminato"}), 200
-
-
-
-if __name__ == "__main__":
-    app.run(debug=True)

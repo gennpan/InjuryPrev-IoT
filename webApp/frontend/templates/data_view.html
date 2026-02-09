@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InjuryPrev - Formato CSV</title>
+    <link rel="icon" type="image/png" sizes="48x48" href="../static/favicon.png?v=2">
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<header>
+    <button class="hamburger" type="button" onclick="toggleSidebar()" aria-label="Apri menu">&#9776;</button>
+    <h2>InjuryPrev - Formato CSV</h2>
+</header>
+
+<nav id="sidebar" class="hidden">
+    <ul>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/data-view">Formato CSV</a></li>
+    </ul>
+</nav>
+
+<main id="main" class="full">
+    <div class="card-header">
+        <button id="toggleFeatures" class="toggle-inline">Mostra/Nascondi info feature</button>
+    </div>
+
+    <section id="featuresContainer" class="card">
+        <h3>Feature fisiologiche usate dal modello</h3>
+        <table class="features-table">
+            <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Descrizione</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr><td>speed_mean</td><td>Velocita media delle ultime 7 sessioni</td></tr>
+            <tr><td>speed_max</td><td>Velocita massima delle ultime 7 sessioni</td></tr>
+            <tr><td>speed_std</td><td>Deviazione standard della velocita</td></tr>
+            <tr><td>acc_norm_mean</td><td>Accelerazione normalizzata media delle ultime 7 sessioni</td></tr>
+            <tr><td>acc_norm_max</td><td>Accelerazione normalizzata massima delle ultime 7 sessioni</td></tr>
+            <tr><td>acc_norm_std</td><td>Deviazione standard dell'accelerazione normalizzata</td></tr>
+            <tr><td>gyro_norm_mean</td><td>Valore medio del giroscopio normalizzato delle ultime 7 sessioni</td></tr>
+            <tr><td>gyro_norm_max</td><td>Valore massimo del giroscopio normalizzato delle ultime 7 sessioni</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="card">
+        <h3>Regole del file CSV</h3>
+        <p>Il frontend accetta solo file CSV validi e li invia al backend per la predizione.</p>
+
+        <table class="features-table rules-table">
+            <thead>
+            <tr>
+                <th>Controllo</th>
+                <th>Regola</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr><td>Numero righe</td><td>Esattamente 7 sessioni (7 giorni)</td></tr>
+            <tr><td>Header</td><td>Deve combaciare con le 10 colonne richieste</td></tr>
+            <tr><td>Date</td><td>Formato YYYY-MM-DD</td></tr>
+            <tr><td>Feature numeriche</td><td>Tutti i valori devono essere numeri validi</td></tr>
+            </tbody>
+        </table>
+
+        <p class="block-title">Header richiesto</p>
+        <pre class="csv-schema-block">player_id,date,speed_mean,speed_max,speed_std,acc_norm_mean,acc_norm_max,acc_norm_std,gyro_norm_mean,gyro_norm_max</pre>
+
+        <p class="block-title">Esempio (prime 2 righe)</p>
+        <pre class="csv-schema-block">TeamA-0362cdd5-7a63-480a-a46a-62a99fb1692f,2021-06-19,0.5263941353027983,5.300004,0.741758808792661,1.155925289444595,17.573778760214363,0.3976332687864669,0.1371996154923438,6.277211295287062
+TeamA-0362cdd5-7a63-480a-a46a-62a99fb1692f,2021-08-23,0.612403172823963,5.302782,0.8402950721172977,1.1811309885046477,9.855634438851856,0.4522121707159702,0.1480878502722504,5.244885024900644</pre>
+    </section>
+</main>
+
+<script src="/static/data_view.js"></script>
+</body>
+</html>

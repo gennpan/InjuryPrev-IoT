@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InjuryPrev</title>
+    <link rel="icon" type="image/png" sizes="48x48" href="../static/favicon.png?v=2">
+    <link rel="stylesheet" href="../static/style.css">
+</head>
+<body>
+<header>
+    <button class="hamburger" type="button" onclick="toggleSidebar()" aria-label="Apri menu">&#9776;</button>
+    <h2>InjuryPrev - Dashboard</h2>
+</header>
+
+<nav id="sidebar" class="hidden">
+    <ul>
+        <li><a href="/dashboard">Dashboard</a></li>
+        <li><a href="/data-view">Formato CSV</a></li>
+    </ul>
+</nav>
+
+<main id="main" class="full">
+    <section class="card">
+        <h3>Carica il tuo CSV (7 sessioni)</h3>
+        <p>
+            Il file deve avere esattamente 7 righe dati (7 giorni di allenamento) e questo header:
+        </p>
+        <p class="csv-schema">
+            player_id,date,speed_mean,speed_max,speed_std,acc_norm_mean,acc_norm_max,acc_norm_std,gyro_norm_mean,gyro_norm_max
+        </p>
+
+        <form id="predictForm" class="upload-form">
+            <label for="csvFile" class="file-picker">Seleziona file .csv</label>
+            <input id="csvFile" type="file" accept=".csv,text/csv" required>
+            <button id="predictBtn" type="submit" class="btl">Calcola rischio injury</button>
+        </form>
+
+        <p id="uploadStatus" class="status-message status-info">
+            Nessun file selezionato.
+        </p>
+    </section>
+
+    <section class="card">
+        <h3>Anteprima sessioni caricate</h3>
+        <div class="table-wrap">
+            <table class="features-table preview-table">
+                <thead>
+                <tr>
+                    <th>Player ID</th>
+                    <th>Date</th>
+                    <th>Speed Mean</th>
+                    <th>Speed Max</th>
+                    <th>Speed Std</th>
+                    <th>Acc Norm Mean</th>
+                    <th>Acc Norm Max</th>
+                    <th>Acc Norm Std</th>
+                    <th>Gyro Norm Mean</th>
+                    <th>Gyro Norm Max</th>
+                </tr>
+                </thead>
+                <tbody id="data-table-body">
+                <tr>
+                    <td colspan="10" class="placeholder-row">Carica un CSV per vedere l'anteprima.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="card risk-card">
+        <h3>Probabilita injury</h3>
+        <div class="risk-panel">
+            <div id="riskGauge" class="risk-gauge" style="--risk: 0;">
+                <span id="riskPercent">--%</span>
+            </div>
+            <div class="risk-info">
+                <p id="riskLabel" class="risk-label risk-neutral">In attesa di analisi</p>
+                <p id="riskMeta">Carica un CSV e invia i 7 giorni al backend per la predizione.</p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<script src="/static/dashboard.js"></script>
+</body>
+</html>
