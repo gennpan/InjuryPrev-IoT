@@ -19,6 +19,21 @@ Il file deve contenere una riga per ciascun giorno di allenamento e rispettare i
 player_id,date,speed_mean,speed_max,speed_std,acc_norm_mean,acc_norm_max,acc_norm_std,gyro_norm_mean,gyro_norm_max
 ```
 
+#### Struttura dei campi di input
+
+| Campo              | Tipo        | Descrizione |
+|--------------------|------------|-------------|
+| player_id          | String(UUID-like)    | Identificativo univoco del calciatore a cui si riferiscono i dati di allenamento. |
+| date               | Date((YYYY-MM-DD))       | Data della sessione di allenamento (formato consigliato: YYYY-MM-DD). |
+| speed_mean         | Float      | Velocità media registrata durante la sessione di allenamento (m/s). |
+| speed_max          | Float      | Velocità massima raggiunta durante la sessione di allenamento (m/s). |
+| speed_std          | Float      | Deviazione standard della velocità, indicativa della variabilità dell’intensità di corsa. |
+| acc_norm_mean      | Float      | Valore medio della norma dell’accelerazione, misura dell’intensità complessiva dei movimenti. |
+| acc_norm_max       | Float      | Valore massimo della norma dell’accelerazione registrato durante la sessione. |
+| acc_norm_std       | Float      | Deviazione standard della norma dell’accelerazione, utile per valutare la variabilità dei carichi. |
+| gyro_norm_mean     | Float      | Valore medio della norma del giroscopio, indicativo dei movimenti rotazionali del corpo. |
+| gyro_norm_max      | Float      | Valore massimo della norma del giroscopio registrato durante la sessione. |
+
 ### Output
 
 Il sistema elabora i dati forniti in input e restituisce una stima del rischio di infortunio, calcolata sulla base delle metriche contenute nel file caricato.
